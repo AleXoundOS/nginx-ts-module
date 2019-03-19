@@ -386,6 +386,9 @@ ngx_ts_hls_close_segment(ngx_ts_hls_t *hls, ngx_ts_hls_variant_t *var,
     max_seg = (int64_t) hls->conf->max_seg * 90;
     max_size = hls->conf->max_size;
 
+
+    // FIMXE:  Meta 可能没有，无法用 es->rand 准确判断是否为 IDR 帧
+
     if (d < min_seg
         || (d < max_seg && es->video && !es->rand)
         || (d < max_seg && !es->video && var->prog->video))

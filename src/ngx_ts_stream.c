@@ -683,14 +683,19 @@ ngx_ts_read_pmt(ngx_ts_stream_t *ts, ngx_ts_program_t *prog, ngx_ts_header_t *h,
         es->type = type;
         es->pid = pid;
 
+#define IS_HEVC(x) ((x)==0x24 || (x)==0x25 || ((x)>=0x28 && (x)<=0x2b))
+
         if (type == NGX_TS_VIDEO_MPEG1
             || type == NGX_TS_VIDEO_MPEG2
             || type == NGX_TS_VIDEO_MPEG4
-            || type == NGX_TS_VIDEO_AVC)
+            || type == NGX_TS_VIDEO_AVC
+            || IS_HEVC(type))
         {
             es->video = 1;
             prog->video = 1;
         }
+
+#undef IS_HEVC
 
         ngx_log_debug3(NGX_LOG_DEBUG_CORE, ts->log, 0,
                        "ts es type:%ui, video:%d, pid:0x%04uxd",
