@@ -1,4 +1,3 @@
-
 /*
  * Copyright (C) Roman Arutyunyan
  */
@@ -113,18 +112,36 @@ ngx_http_ts_handler(ngx_http_request_t *r)
     ctx->ts->pool = r->pool;
     ctx->ts->log = r->connection->log;
 
-    for (n = 0; n < r->uri.len; n++) {
-        if (r->uri.data[r->uri.len - 1 - n] == '/') {
-            break;
+    tlcf = ngx_http_get_module_loc_conf(r, ngx_http_ts_module);
+
+    /* if nested mode, strip given string from the request uri from beginning */
+    if (tlcf->hls && tlcf->hls->nested.len) {
+        if (ngx_strncmp(r->uri.data, tlcf->hls->nested.data,
+                        tlcf->hls->nested.len) == 0) {
+            name.data = r->uri.data + tlcf->hls->nested.len;
+            name.len = r->uri.len - tlcf->hls->nested.len;
+        }
+        else {
+            ngx_log_error(NGX_LOG_ERR, ctx->ts->log, 0,
+                          "uri does not begin with "
+                          "ts-module `nested` setting \"%V\"",
+                          &tlcf->hls->nested);
+            return NGX_ERROR;
         }
     }
-
-    name.data = &r->uri.data[r->uri.len - n];
-    name.len = n;
+    else {
+        for (n = 0; n < r->uri.len; n++) {
+            if (r->uri.data[r->uri.len - 1 - n] == '/') {
+                break;
+            }
+        }
+        name.data = &r->uri.data[r->uri.len - n];
+        name.len = n;
+    }
+    ngx_log_error(NGX_LOG_INFO, ctx->ts->log, 0,
+                  "ts-module: handle stream name %V", &name);
 
     /* XXX detect streams with the same name, add shared zone */
-
-    tlcf = ngx_http_get_module_loc_conf(r, ngx_http_ts_module);
 
     if (tlcf->hls) {
         if (ngx_ts_hls_create(tlcf->hls, ctx->ts, &name) == NULL) {

@@ -1,4 +1,3 @@
-
 /*
  * Copyright (C) Roman Arutyunyan
  */
@@ -58,7 +57,7 @@ ngx_ts_hls_create(ngx_ts_hls_conf_t *conf, ngx_ts_stream_t *ts, ngx_str_t *name)
         return NULL;
     }
 
-    ngx_sprintf(hls->path.data, "%V/%V%Z", &conf->path->name, name);
+    ngx_sprintf(hls->path.data, "%V/%V/%Z", &conf->path->name, name);
 
     cln = ngx_pool_cleanup_add(ts->pool, 0);
     if (cln == NULL) {
@@ -680,15 +679,14 @@ ngx_ts_hls_open_segment(ngx_ts_hls_t *hls, ngx_ts_hls_variant_t *var)
         }
 
         /* XXX dir access mode */
-        if (ngx_create_dir(hls->path.data, 0700) == NGX_FILE_ERROR) {
+        ngx_log_error(NGX_LOG_INFO, ts->log, 0,
+                      "ts-module: hls open path = %V", &hls->path);
+        if (ngx_create_full_path(hls->path.data, 0700) != 0) {
             err = ngx_errno;
-
-            if (err != NGX_EEXIST) {
-                ngx_log_error(NGX_LOG_CRIT, ts->log, err,
-                              ngx_create_dir_n " \"%s\" failed",
-                              hls->path.data);
-                return NGX_ERROR;
-            }
+            ngx_log_error(NGX_LOG_CRIT, ts->log, err,
+                          "ngx_create_full_path \"%s\" failed",
+                          hls->path.data);
+            return NGX_ERROR;
         }
     }
 
@@ -828,7 +826,7 @@ ngx_ts_hls_set_slot(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     char  *p = conf;
 
     ssize_t             max_size;
-    ngx_str_t          *value, s, ss, path;
+    ngx_str_t          *value, s, ss, path, nested;
     ngx_int_t           v;
     ngx_uint_t          i, nsegs, clean;
     ngx_msec_t          min_seg, max_seg, analyze;
@@ -843,6 +841,7 @@ ngx_ts_hls_set_slot(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     value = cf->args->elts;
 
     ngx_str_null(&path);
+    ngx_str_null(&nested);
 
     min_seg = 5000;
     max_seg = 10000;
@@ -863,6 +862,18 @@ ngx_ts_hls_set_slot(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
             }
 
             if (ngx_conf_full_name(cf->cycle, &path, 0) != NGX_OK) {
+                return NGX_CONF_ERROR;
+            }
+
+            continue;
+        }
+
+        if (ngx_strncmp(value[i].data, "nested=", 7) == 0) {
+
+            nested.len = value[i].len - 7;
+            nested.data = value[i].data + 7;
+
+            if (ngx_conf_full_name(cf->cycle, &nested, 0) != NGX_OK) {
                 return NGX_CONF_ERROR;
             }
 
@@ -980,6 +991,8 @@ ngx_ts_hls_set_slot(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     }
 
     hls->path->name = path;
+
+    hls->nested = nested;
 
     hls->min_seg = min_seg;
     hls->max_seg = max_seg;

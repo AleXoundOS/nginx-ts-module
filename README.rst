@@ -67,16 +67,17 @@ ts_hls
 ------
 
 ========== ========
-*Syntax:*  ``ts_hls path=PATH [segment=MIN[:MAX]] [segments=NUMBER] [max_size=SIZE] [noclean]``
+*Syntax:*  ``ts_hls path=PATH [nested=LOC_STR] [segment=MIN[:MAX]] [segments=NUMBER] [max_size=SIZE] [noclean]``
 *Context:* location
 ========== ========
 
 Enables generating live HLS in the location.
-The ``PATH`` parameter specifies a directory where HLS playlist and segment
-files will be created.
-The directory is created if missing.
-For every publshed stream a subdirectory with the stream name is created under
-the ``PATH`` directory.
+The ``PATH`` parameter specifies a base directory where subdirectories with HLS
+playlist and segment files will be created.
+The ``LOC_STR`` parameter specifies a string URI must begin with to be stripped
+to form nested subdirectories.
+For every published stream all directories are created if missing according to
+URI and ``nested`` setting.
 The HLS playlist file created in the stream subdirectory is named
 ``index.m3u8``.
 A path handler is installed to watch files in the directory.

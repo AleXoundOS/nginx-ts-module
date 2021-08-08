@@ -16,6 +16,7 @@
 
 typedef struct {
     ngx_path_t            *path;
+    ngx_str_t              nested;
     ngx_msec_t             min_seg;
     ngx_msec_t             max_seg;
     ngx_msec_t             analyze;
