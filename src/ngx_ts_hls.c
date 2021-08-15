@@ -679,11 +679,11 @@ ngx_ts_hls_open_segment(ngx_ts_hls_t *hls, ngx_ts_hls_variant_t *var)
         }
 
         /* XXX dir access mode */
-        ngx_log_error(NGX_LOG_INFO, ts->log, 0,
+        ngx_log_error(NGX_LOG_NOTICE, ts->log, 0,
                       "ts-module: hls open path = %V", &hls->path);
         if (ngx_create_full_path(hls->path.data, 0700) != 0) {
             err = ngx_errno;
-            ngx_log_error(NGX_LOG_CRIT, ts->log, err,
+            ngx_log_error(NGX_LOG_ERR, ts->log, err,
                           "ngx_create_full_path \"%s\" failed",
                           hls->path.data);
             return NGX_ERROR;
